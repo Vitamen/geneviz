@@ -51,9 +51,17 @@ export default class Application extends PureComponent {
 
         const zoominfo = {"start":1,"end":3088286401}
         let items = [];
+        let axis = []
         let factor = ((zoominfo.end - zoominfo.start) / zoomFactor);
         for (let i = zoominfo.start; i < (zoominfo.end); i = i + factor) {
-            items.push(Math.floor(i));
+            var axisitem = {"index":i, "highlight":true}
+            if (i % 500000000 == 0)
+                axisitem["render"] = true
+            else{
+                axisitem["render"] = false
+            }
+            axis.push(axisitem)
+            items.push(i);
         }
         this.state = {
             columnCount: zoomFactor,
@@ -69,6 +77,7 @@ export default class Application extends PureComponent {
             zoomLevel: 0,
             zoomStack: [zoominfo],
             data:[],
+            axis:axis,
             dataIndex: 0,
             lastFactor: factor
         }
@@ -106,7 +115,18 @@ export default class Application extends PureComponent {
         console.log(url)
         axios.get(url)
             .then((res) => {
-                this.setState({ data: res.data },function(){
+                var axis = this.state.axis
+                for (var key in axis){
+                    if (axis[key].index >= start && axis[key].index <= end){
+                        console.log(axis[key].index)
+                        axis[key]["highlight"] = true
+                    }else{
+                        axis[key]["highlight"] = false
+                    }
+                }
+
+                console.log(axis)
+                this.setState({ data: res.data, axis:axis},function(){
                        this.axis.forceUpdate()
                 }.bind(this));
             });
@@ -249,10 +269,7 @@ export default class Application extends PureComponent {
                         this._onColumnCountChange(items.length)
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 0})
                         this.axis.recomputeGridSize({columnIndex: 1, rowIndex: 1})
-                        this.axis.recomputeGridSize({columnIndex: 2, rowIndex: 0})
-                        this.axis.recomputeGridSize({columnIndex: 3, rowIndex: 0})
-                        this.axis.recomputeGridSize({columnIndex: 4, rowIndex: 0})
-                        
+
                     }.bind(this))
                 }
             }
@@ -296,7 +313,7 @@ export default class Application extends PureComponent {
     }
 
     _getDatum(index) {
-        return this.state.list.get(index % this.state.list.size)
+        return this.state.list.get(index)
     }
 
 
@@ -344,8 +361,8 @@ export default class Application extends PureComponent {
         //         label = this.state.data[columnIndex]["data"][rowIndex - 2]
         //     }
         //     if (this.state.data[columnIndex]) {
-                
-                let dataInRange = this._dataInRange(this.state.data[dataIndex]["start"], 
+
+                let dataInRange = this._dataInRange(this.state.data[dataIndex]["start"],
                                     this.state.data[dataIndex]["end"], columnIndex);
                 if (dataInRange) {
                     label = this.state.data[dataIndex]["data"][rowIndex - 2];
@@ -357,7 +374,7 @@ export default class Application extends PureComponent {
                     //color = "#e0e0e0"
                 }
         }
-            
+
 
         // const rowClass = this._getRowClassName(rowIndex)
         // const classNames = cn(rowClass, styles.cell, {
@@ -371,16 +388,21 @@ export default class Application extends PureComponent {
 
         var setState = this.setState.bind(this)
         var cname = styles.cell
+        var op =1
+
         if (columnIndex == this.state.hoveredColumnIndex){
-            color = "rgba(100, 0, 0, 0.25)"
+            op = 0.5
             cname = styles.hoveredItem
         }
 
         style = {
             ...style,
-            backgroundColor: color
-        }
+            backgroundColor: color,
+            opacity:op,
+            transition: "opacity 1s"
+    }
 
+        //console.log(key)
 
         return React.DOM.div({
             className: cname,
@@ -391,22 +413,12 @@ export default class Application extends PureComponent {
                     hoveredRowIndex: rowIndex
                 })
                 if(grid){
-                    grid.recomputeGridSize({columnIndex: columnIndex, rowIndex: rowIndex})
+                    grid.forceUpdate()
+                    //grid.recomputeGridSize({columnIndex: columnIndex, rowIndex: rowIndex})
                 }
             },
             style: style
         })
-
-
-        // {label} to add number
-        // return (
-        //     <div
-        //         className={classNames}
-        //         key={key}
-        //         style={style}
-        //     >
-        //     </div>
-        // )
     }
 
     _renderXAxisCell({columnIndex, key, rowIndex, style}) {
@@ -415,14 +427,13 @@ export default class Application extends PureComponent {
         const rowClass = this._getRowClassName(rowIndex)
         const datum = this._getDatum(columnIndex)
 
+        // const classNames = cn(rowClass, styles.cell, {
+        //     [styles.centeredCell]: columnIndex > 0
+        // })
 
-        const classNames = cn(rowClass, styles.cell, {
-            [styles.centeredCell]: columnIndex > 0
-        })
 
         style = {
             ...style,
-             //fontSize: "x-small",
         }
 
         //Format based on length of number
@@ -431,56 +442,46 @@ export default class Application extends PureComponent {
         const hundredMillions =  Math.floor(datum / 100000000 % 10)
         const billions =  Math.floor(datum / 1000000000 % 10)
 
+        let label = ""
 
-        //Compute the resolution for the scale
-        let zstate = this.state.zoomStack[this.state.zoomStack.length - 1]
-
-
-        let label = "" //billions + "." + hundredMillions + tensMillions + millions
-
-        //Computer Major Axis Scale
-        let scale = 1000 * 1000 * 1000 * 10 // 1 Billion
-        let start = Math.floor(zstate.start / scale % 10)
-        let end = Math.floor(zstate.end / scale % 10)
-
-        while (start == end){
-            scale = scale / 10
-            start = Math.floor(zstate.start / scale % 10)
-            end = Math.floor(zstate.end / scale % 10)
+        //Handle Window Macro Axis
+        if ((rowIndex == 0)){
+            if (columnIndex % 10 == 0) {
+                label = Math.floor((this.state.axis[columnIndex % 100]["index"]))
+            }
+            if (this.state.axis[columnIndex % 100]["highlight"]){
+                style["backgroundColor"] = "lightblue"
+            }else{
+                style["backgroundColor"] = "white"
+            }
         }
 
 
-        //Major Axis : Markers in Billions
-        if ((columnIndex % 5) == 0 && (rowIndex == 0)) {
-            label = billions + "." +  hundredMillions + "" + tensMillions  + "B"
+        //Minor Axis : Markers in Billions
+        if ((rowIndex == 1) && (columnIndex % 8) == 0 ) {
+            if (this.state.zoomLevel > 2){
+                label = datum
+            }
+            else if (this.state.zoomLevel > 1) {
+                label = billions + "." +  hundredMillions + "" + tensMillions  +  millions  + "B"
+            }
+            else{
+                label = billions + "." +  hundredMillions + "" + tensMillions  + "B"
+            }
         }
 
-        
-            //Minot Axis : Markers in Millions
 
-        if (rowIndex == 1){
-            label = ""
-        }
 
-        scale = scale /10
-
-        if ((columnIndex % 5) > 0 && rowIndex == 1) {
-            label = ""
-        }else if (rowIndex == 1){
-            label = "|"
-        }
-
-        if (label === NaN) {
-            label = datum
-        }
 
         return (
             <div
-                className={classNames}
+                className={styles.cell}
                 key={key}
                 style={style}
             >
-                {label}
+                <span className={styles.textOverflowCenter}>
+                    {label}
+                </span>
             </div>
         )
     }

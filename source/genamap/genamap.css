@@ -25,8 +25,6 @@ body, html, #root {
 }
 
 .cell {
-    height: 100%;
-    display: flex;
     justify-content: center;
     align-items: center;
     border-right: 1px dotted #e0e0e0;
@@ -34,9 +32,9 @@ body, html, #root {
     background-color: rgba(199, 226, 212, 0.23);
 }
 
-/*.cell:hover {*/
-    /*background-color: black;*/
-/*}*/
+.cell:hover{
+    background-color: rgba(100, 0, 0, 0.1);
+}
 
 .hoveredItem {
     background-color: green;
@@ -50,7 +48,15 @@ body, html, #root {
 .centeredCell {
     align-items: center;
     text-align: center;
+    font-size: x-small;
 }
+
+.textOverflowCenter{
+    margin-left: -100%;
+    margin-right: -100%;
+    text-align: center;
+}
+
 
 .letterCell {
     font-size: 10px;
