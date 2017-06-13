@@ -7,10 +7,13 @@ import 'babel-polyfill'
 import React from 'react'
 import { render } from 'react-dom'
 
+//import TopAxis  from './topaxis'
 import Application from './Application'
 
 render(
+
     <Application />,
+
     //<MasonryApp />,
     //<CorrelationGrid/>
   document.getElementById('root')

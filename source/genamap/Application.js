@@ -8,6 +8,7 @@ import axios from 'axios'
 import d3 from 'd3'
 import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer'
 import Grid from 'react-virtualized/dist/commonjs/Grid'
+import TopAxis from './topaxis'
 
 /*
 TODO LIST
@@ -42,15 +43,16 @@ const calculateColorScale = (min, max, threshold) => {
 
 
 export default class Application extends PureComponent {
-    static contextTypes = {
-        list: PropTypes.instanceOf(Immutable.List).isRequired
-    };
+    //  static contextTypes = {
+    //     list: PropTypes.instanceOf(Immutable.List).isRequired
+    //  };
 
     constructor(props, context) {
         super(props, context)
 
         const zoominfo = {"start":1,"end":3088286401}
         let items = [];
+        //Aggregating labels
         let factor = ((zoominfo.end - zoominfo.start) / zoomFactor);
         for (let i = zoominfo.start; i < (zoominfo.end); i = i + factor) {
             items.push(Math.floor(i));
@@ -142,7 +144,10 @@ export default class Application extends PureComponent {
                     <div className={styles.zoomBarCursor} style={{top: cursorPosition}}></div>
                 </div>
 
-
+                <div className={styles.topAxis}>
+                   <TopAxis />
+                  
+                </div>
                 <div className={styles.CustomWindowScrollerWrapper}>
                     <CustomWindowScroller onScroll={this._updateZoom.bind(this)}>
                         {({ height, isScrolling, scrollTop }) => (
