@@ -72,7 +72,9 @@ export default class Application extends PureComponent {
             zoomStack: [zoominfo],
             data:[],
             dataIndex: 0,
-            lastFactor: factor
+            lastFactor: factor,
+            start: 1,
+            end: 3088286401
         }
 
         this._cellRenderer = this._cellRenderer.bind(this)
@@ -124,8 +126,8 @@ export default class Application extends PureComponent {
             rowCount,
             scrollToColumn,
             scrollToRow,
-            useDynamicRowHeight
-        } = this.state
+            useDynamicRowHeight,
+                    } = this.state
         
         let cursorPosition;
         if (this.state.zoomamount > 0) {
@@ -134,6 +136,14 @@ export default class Application extends PureComponent {
             cursorPosition =  Math.max(0, (99 - (100*(this.state.zoomLevel / maxZoom))) -  (this.state.zoomamount*0.2)) + "%";
         }
 
+        let zstack = this.state.zoomStack
+                if (zstack.length > 1){
+                    zstack.pop() 
+                }
+
+                let start = zstack[zstack.length - 1].start
+                let end = zstack[zstack.length - 1].end
+            
         return (
             <div>
                 <div className={styles.zoomBar} >
@@ -145,7 +155,9 @@ export default class Application extends PureComponent {
                 </div>
 
                 <div className={styles.topAxis}>
-                   <TopAxis />
+                    <TopAxis selected_min={this.state.start}
+                             selected_max={this.state.end}
+                    />
                   
                 </div>
                 <div className={styles.CustomWindowScrollerWrapper}>
@@ -192,6 +204,7 @@ export default class Application extends PureComponent {
     }
 
     _updateZoom({event, isScrolling}) {
+        //console.log(event)
         if (isScrolling == false) this.setState({'zoomamount': 0})
         else {
             let zoomamt  = this.state.zoomamount + (event.wheelDeltaY / 10 )
@@ -205,6 +218,8 @@ export default class Application extends PureComponent {
                 dataIndex = 0; // reset data index for next redraw
                 let start = this.state.list.get(Math.max(0, Math.floor(current) - 1))
                 let end = this.state.list.get(Math.min(this.state.list.size-1, Math.floor(current) + 2))
+  
+  
                 let factor = Math.floor((end - start) / zoomFactor);
                 let items = [];
 
@@ -216,13 +231,14 @@ export default class Application extends PureComponent {
                     const zstack = this.state.zoomStack
                     zstack.push({"start": start, "end": end})
 
-                    this.setState({"list": Immutable.List(items), zoomStack: zstack, 
+                    this.setState({"list": Immutable.List(items), zoomStack: zstack, start: start, end: end,
                     zoomamount: 0, zoomLevel: this.state.zoomLevel + 1, data:[], lastFactor: factor}, function () {
                         this.fetchData(start,end,zoomFactor)
 
                         this._onColumnCountChange(items.length)
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 0})
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 1})
+                        
 
                     }.bind(this))
                 }
@@ -239,6 +255,7 @@ export default class Application extends PureComponent {
 
                     let start = zstack[zstack.length - 1].start
                     let end = zstack[zstack.length - 1].end
+
                     let factor = Math.max(1, Math.floor((end - start) / zoomFactor));
                     let items = [];
 
@@ -247,7 +264,7 @@ export default class Application extends PureComponent {
                     }
 
                     this.setState({"list": Immutable.List(items), zoomStack: zstack, 
-                    zoomamount: 0, zoomLevel: this.state.zoomLevel - 1, data:[], lastFactor: factor}, function () {
+                    zoomamount: 0, zoomLevel: this.state.zoomLevel - 1, start: start, end: end, data:[], lastFactor: factor}, function () {
                         this.fetchData(start,end,zoomFactor)
                         this._computeMajorAxisLabels(start,end,items.length)
 
@@ -276,7 +293,9 @@ export default class Application extends PureComponent {
             // }.bind(this))
             //We want to update data
             //this.axis.forceUpdate()
-            }
+        }
+        
+        
         
     }
 
