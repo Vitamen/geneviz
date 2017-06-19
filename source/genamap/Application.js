@@ -60,8 +60,8 @@ export default class Application extends PureComponent {
         }
         this.state = {
             columnCount: zoomFactor,
-            //height: 60,
-            overscanColumnCount: 0,
+            height:500,
+            overscanColumnCount: 40,
             overscanRowCount: 0,
             rowHeight: 20,
             rowCount: 30,
@@ -75,7 +75,9 @@ export default class Application extends PureComponent {
             dataIndex: 0,
             lastFactor: factor,
             start: 1,
-            end: 3088286401
+            end: 3088286401,
+            isClickable: true,
+            mode: 'edges'
         }
 
         this._cellRenderer = this._cellRenderer.bind(this)
@@ -98,6 +100,8 @@ export default class Application extends PureComponent {
         this._resetDataIndex = this._resetDataIndex.bind(this)
         this._setGridRef = this._setGridRef.bind(this)
         this._getYLabel = this._getYLabel.bind(this)
+        this._selectCell = this._selectCell.bind(this)
+        this._onClickableChange = this._onClickableChange.bind(this)
     }
 
     componentWillMount(){
@@ -128,6 +132,8 @@ export default class Application extends PureComponent {
             scrollToColumn,
             scrollToRow,
             useDynamicRowHeight,
+            isClickable,
+            mode
                     } = this.state
         
         let cursorPosition;
@@ -160,10 +166,27 @@ export default class Application extends PureComponent {
                              selected_max={this.state.end}
                     />
                 </div>
-                <div className={styles.CustomWindowScrollerWrapper}>
+                {/*<div className={styles.CustomWindowScrollerWrapper}>
                     <CustomWindowScroller onScroll={this._updateZoom.bind(this)}>
-                        {({ height, isScrolling, scrollTop }) => (
+                        {({ height, isScrolling, scrollTop }) => (*/}
+                
+                <div className={styles.ArrowKeyStepperWrapper}>
+                    <ArrowKeyStepper 
+                        key={isClickable}
+                        columnCount={columnCount}
+                        rowCount={rowCount}
+                        isControlled={isClickable}
+                        onScrollToChange={this._updateZoom.bind(this)}
+                        mode={mode}
+                        rowCount={rowCount}
+                        scrollToColumn={scrollToColumn}
+                        scrollToRow={scrollToRow}
+            
 
+                    >
+
+                    {({onSectionRendered, scrollToColumn, scrollToRow}) => (
+                        <div>
 
                 
                             <AutoSizer disableHeight>
@@ -175,7 +198,7 @@ export default class Application extends PureComponent {
                                         columnCount={columnCount}
                                         height={height}
                                         width={width}
-                                        //onSectionRendered={onSectionRendered}
+                                        onSectionRendered={onSectionRendered}
                                         overscanColumnCount={overscanColumnCount}
                                         overscanRowCount={overscanRowCount}
                                         rowHeight={
@@ -183,12 +206,15 @@ export default class Application extends PureComponent {
                                         }
                                         rowCount={rowCount}
                                         scrollToColumn={scrollToColumn}
+                                        scrollToRow={scrollToRow}
                                     />
                                 )}
                             </AutoSizer>
+                            </div>
                         )}
-        
-                    </CustomWindowScroller>
+{/*        
+                    </CustomWindowScroller>*/}
+                    </ArrowKeyStepper>
                 </div>
             </div>
         )
@@ -396,6 +422,10 @@ export default class Application extends PureComponent {
 
         var setState = this.setState.bind(this)
         var cname = styles.cell
+        var isClickable = this.isClickable
+        var selectCell = this._selectCell.bind(this)
+
+        
         if (columnIndex == this.state.hoveredColumnIndex){
             color = "rgba(100, 0, 0, 0.25)"
             cname = styles.hoveredItem
@@ -418,6 +448,9 @@ export default class Application extends PureComponent {
                 if(grid){
                     grid.recomputeGridSize({columnIndex: columnIndex, rowIndex: rowIndex})
                 }
+            },
+            onClick: function(){
+             isClickable && (() => selectCell({ scrollToColumn: columnIndex, scrollToRow: rowIndex }))
             },
             style: style
         })
@@ -598,6 +631,20 @@ export default class Application extends PureComponent {
             items.push(Math.floor(i));
         }
         items.push(end);
+    }
+
+    _selectCell({ scrollToColumn, scrollToRow}){
+        console.log('arrow')
+        this.setState({scrollToColumn, scrollToRow})
+        
+    }
+
+    _onClickableChange (event) {
+        this.setState({
+            isClickable: event.target.checked,
+            scrollToColumn: 0,
+            scrollToRow: 0
+        })
     }
 
 }
