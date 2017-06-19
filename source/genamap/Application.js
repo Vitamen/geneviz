@@ -8,6 +8,7 @@ import axios from 'axios'
 import d3 from 'd3'
 import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer'
 import Grid from 'react-virtualized/dist/commonjs/Grid'
+import ArrowKeyStepper from 'react-virtualized/dist/commonjs/ArrowKeyStepper'
 import TopAxis from './topaxis'
 
 /*
@@ -158,13 +159,13 @@ export default class Application extends PureComponent {
                     <TopAxis selected_min={this.state.start}
                              selected_max={this.state.end}
                     />
-                  
                 </div>
                 <div className={styles.CustomWindowScrollerWrapper}>
                     <CustomWindowScroller onScroll={this._updateZoom.bind(this)}>
                         {({ height, isScrolling, scrollTop }) => (
 
 
+                
                             <AutoSizer disableHeight>
                                 {({width}) => (
                                     <Grid
@@ -174,6 +175,7 @@ export default class Application extends PureComponent {
                                         columnCount={columnCount}
                                         height={height}
                                         width={width}
+                                        //onSectionRendered={onSectionRendered}
                                         overscanColumnCount={overscanColumnCount}
                                         overscanRowCount={overscanRowCount}
                                         rowHeight={
@@ -185,6 +187,7 @@ export default class Application extends PureComponent {
                                 )}
                             </AutoSizer>
                         )}
+        
                     </CustomWindowScroller>
                 </div>
             </div>
@@ -204,7 +207,7 @@ export default class Application extends PureComponent {
     }
 
     _updateZoom({event, isScrolling}) {
-        //console.log(event)
+        console.log(event)
         if (isScrolling == false) this.setState({'zoomamount': 0})
         else {
             let zoomamt  = this.state.zoomamount + (event.wheelDeltaY / 10 )
@@ -218,8 +221,6 @@ export default class Application extends PureComponent {
                 dataIndex = 0; // reset data index for next redraw
                 let start = this.state.list.get(Math.max(0, Math.floor(current) - 1))
                 let end = this.state.list.get(Math.min(this.state.list.size-1, Math.floor(current) + 2))
-  
-  
                 let factor = Math.floor((end - start) / zoomFactor);
                 let items = [];
 
@@ -234,6 +235,7 @@ export default class Application extends PureComponent {
                     this.setState({"list": Immutable.List(items), zoomStack: zstack, start: start, end: end,
                     zoomamount: 0, zoomLevel: this.state.zoomLevel + 1, data:[], lastFactor: factor}, function () {
                         this.fetchData(start,end,zoomFactor)
+                        
 
                         this._onColumnCountChange(items.length)
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 0})
@@ -251,8 +253,7 @@ export default class Application extends PureComponent {
                 let zstack = this.state.zoomStack
                 if (zstack.length > 1){
                     zstack.pop()
-
-
+                    
                     let start = zstack[zstack.length - 1].start
                     let end = zstack[zstack.length - 1].end
 
