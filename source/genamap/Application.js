@@ -220,18 +220,17 @@ export default class Application extends PureComponent {
         //if (isScrolling == false) this.setState({'zoomamount': 0})
         //else {
         let zoomamt = this.state.zoomamount
-        console.log(zoomamt)
+        console.log("zstack length=",this.state.zoomStack.length)
         switch (event.key){
 
             case('ArrowUp'):
                 zoomamt  = this.state.zoomamount + 150
-                console.log(zoomamt)
                 break
                 
             case('ArrowDown'):
                 zoomamt = this.state.zoomamount - 150
-                console.log(zoomamt)
                 break
+     
         }
             
             var current = this.state.hoveredColumnIndex //event.clientX / this._getColumnWidth()
@@ -241,6 +240,7 @@ export default class Application extends PureComponent {
             else if (zoomLevel == maxZoom && zoomamt > 0) return;
             
             if (zoomamt > 100) {
+                //console.log(zoomamt)
                 dataIndex = 0; // reset data index for next redraw
                 let start = this.state.list.get(Math.max(0, Math.floor(current) - 1))
                 let end = this.state.list.get(Math.min(this.state.list.size-1, Math.floor(current) + 2))
@@ -256,6 +256,7 @@ export default class Application extends PureComponent {
 
                     const zstack = this.state.zoomStack
                     zstack.push({"start": start, "end": end})
+                    
 
                     this.setState({"list": Immutable.List(items), zoomStack: zstack, start: start, end: end,
                     zoomamount: 0, zoomLevel: this.state.zoomLevel + 1, data:[], lastFactor: factor}, function () {
@@ -267,19 +268,22 @@ export default class Application extends PureComponent {
                         
 
                     }.bind(this))
+                    
                 }
                 
             } else if (zoomamt < -100){
-                console.log('zoomout')
+                
                 dataIndex = 0; // reset data index for next redraw
 
                 // let c = this.state.zoomStack[this.state.zoomStack.length - 1]
                 //     zstack.splice(this.state.zoomStack.length - 1,1)
+
                 let zstack = this.state.zoomStack
+                console.log('zstack length', zstack.length)
                 if (zstack.length > 1){
                     console.log('poppin')
                     zstack.pop()
-
+                }
 
                     let start = zstack[zstack.length - 1].start
                     let end = zstack[zstack.length - 1].end
@@ -304,11 +308,10 @@ export default class Application extends PureComponent {
                         this.axis.recomputeGridSize({columnIndex: 4, rowIndex: 0})
                         
                     }.bind(this))
-                }
+                
             }
             else {
-                console.log('case b')
-                this.setState({'zoomamount': zoomamt})
+                this.setState({zoomamount: zoomamt})
             }
 
 
