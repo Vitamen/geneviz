@@ -97,6 +97,8 @@ export default class Application extends PureComponent {
         this._resetDataIndex = this._resetDataIndex.bind(this)
         this._setGridRef = this._setGridRef.bind(this)
         this._getYLabel = this._getYLabel.bind(this)
+        this._onKeyDown = this._onKeyDown.bind(this)
+        this._updateZoom = this._updateZoom.bind(this)
     }
 
     componentWillMount(){
@@ -146,6 +148,8 @@ export default class Application extends PureComponent {
             
         return (
             <div>
+
+                
                 <div className={styles.zoomBar} >
                     <div className={styles.zoomBarCursorMarker} style={{top: 100 - (100*(4/maxZoom)) + "%"}}></div>
                     <div className={styles.zoomBarCursorMarker} style={{top: 100 - (100*(3/maxZoom)) + "%"}}></div>
@@ -160,8 +164,14 @@ export default class Application extends PureComponent {
                     />
                   
                 </div>
+
+                <div 
+                    className={styles.ArrowZoomWrapper}
+                    onKeyDown={this._onKeyDown}>
+
+
                 <div className={styles.CustomWindowScrollerWrapper}>
-                    <CustomWindowScroller onScroll={this._updateZoom.bind(this)}>
+                    <CustomWindowScroller>
                         {({ height, isScrolling, scrollTop }) => (
 
 
@@ -181,12 +191,14 @@ export default class Application extends PureComponent {
                                         }
                                         rowCount={rowCount}
                                         scrollToColumn={scrollToColumn}
+                                        onKeyDown={this._onKeyDown}
                                     />
                                 )}
                             </AutoSizer>
                         )}
                     </CustomWindowScroller>
                 </div>
+            </div>
             </div>
         )
     }
@@ -203,11 +215,25 @@ export default class Application extends PureComponent {
         this.axis = grid
     }
 
-    _updateZoom({event, isScrolling}) {
+    _updateZoom({event}) {
         //console.log(event)
-        if (isScrolling == false) this.setState({'zoomamount': 0})
-        else {
-            let zoomamt  = this.state.zoomamount + (event.wheelDeltaY / 10 )
+        //if (isScrolling == false) this.setState({'zoomamount': 0})
+        //else {
+        let zoomamt = this.state.zoomamount
+        console.log(zoomamt)
+        switch (event.key){
+
+            case('ArrowUp'):
+                zoomamt  = this.state.zoomamount + 150
+                console.log(zoomamt)
+                break
+                
+            case('ArrowDown'):
+                zoomamt = this.state.zoomamount - 150
+                console.log(zoomamt)
+                break
+        }
+            
             var current = this.state.hoveredColumnIndex //event.clientX / this._getColumnWidth()
             let zoomLevel = this.state.zoomLevel
             
@@ -244,12 +270,14 @@ export default class Application extends PureComponent {
                 }
                 
             } else if (zoomamt < -100){
+                console.log('zoomout')
                 dataIndex = 0; // reset data index for next redraw
 
                 // let c = this.state.zoomStack[this.state.zoomStack.length - 1]
                 //     zstack.splice(this.state.zoomStack.length - 1,1)
                 let zstack = this.state.zoomStack
                 if (zstack.length > 1){
+                    console.log('poppin')
                     zstack.pop()
 
 
@@ -279,6 +307,7 @@ export default class Application extends PureComponent {
                 }
             }
             else {
+                console.log('case b')
                 this.setState({'zoomamount': zoomamt})
             }
 
@@ -293,7 +322,7 @@ export default class Application extends PureComponent {
             // }.bind(this))
             //We want to update data
             //this.axis.forceUpdate()
-        }
+        
         
         
         
@@ -598,5 +627,58 @@ export default class Application extends PureComponent {
         }
         items.push(end);
     }
+
+
+    _onKeyDown (event) {
+
+    //const { columnCount, disabled, mode, rowCount } = this.props
+
+    // if (disabled) {
+    //   return
+    // }
+
+    // const {
+    //   scrollToColumn: scrollToColumnPrevious,
+    //   scrollToRow: scrollToRowPrevious
+    // } = this.state
+
+    // let { scrollToColumn, scrollToRow } = this.state
+
+    // The above cases all prevent default event event behavior.
+    // This is to keep the grid from scrolling after the snap-to update.
+    return this._updateZoom({event})
+    // switch (event.key) {
+    //   case 'ArrowDown':
+    //     return this._updateZoom({event})
+    //     //scrollToRow = mode === 'cells'
+    //     //  ? Math.min(scrollToRow + 1, rowCount - 1)
+    //     //  : Math.min(this._rowStopIndex + 1, rowCount - 1)
+    
+    //   case 'ArrowLeft':
+    //     scrollToColumn = mode === 'cells'
+    //       ? Math.max(scrollToColumn - 1, 0)
+    //       : Math.max(this._columnStartIndex - 1, 0)
+    //     break
+    //   case 'ArrowRight':
+    //     scrollToColumn = mode === 'cells'
+    //       ? Math.min(scrollToColumn + 1, columnCount - 1)
+    //       : Math.min(this._columnStopIndex + 1, columnCount - 1)
+    //     break
+    //   case 'ArrowUp':
+    //     scrollToRow = mode === 'cells'
+    //       ? Math.max(scrollToRow - 1, 0)
+    //       : Math.max(this._rowStartIndex - 1, 0)
+    //     break
+    // }
+
+    // if (
+    //   scrollToColumn !== scrollToColumnPrevious ||
+    //   scrollToRow !== scrollToRowPrevious
+    // ) {
+    //   event.preventDefault()
+
+    //   this.setState({ scrollToColumn, scrollToRow })
+    // }
+  }
 
 }
