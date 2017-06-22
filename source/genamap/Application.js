@@ -167,7 +167,8 @@ export default class Application extends PureComponent {
 
                 <div 
                     className={styles.ArrowZoomWrapper}
-                    onKeyDown={this._onKeyDown}>
+                    onKeyDown={this._onKeyDown}
+                    >
 
 
                 <div className={styles.CustomWindowScrollerWrapper}>
@@ -192,6 +193,7 @@ export default class Application extends PureComponent {
                                         rowCount={rowCount}
                                         scrollToColumn={scrollToColumn}
                                         onKeyDown={this._onKeyDown}
+                                      
                                     />
                                 )}
                             </AutoSizer>
@@ -220,7 +222,7 @@ export default class Application extends PureComponent {
         //if (isScrolling == false) this.setState({'zoomamount': 0})
         //else {
         let zoomamt = this.state.zoomamount
-        console.log("zstack length=",this.state.zoomStack.length)
+    
         switch (event.key){
 
             case('ArrowUp'):
@@ -254,21 +256,34 @@ export default class Application extends PureComponent {
                         items.push(Math.floor(i));
                     }
 
-                    const zstack = this.state.zoomStack
+                    let zstack = this.state.zoomStack
                     zstack.push({"start": start, "end": end})
+
                     
+                    console.log('zstack:', zstack)
+                    console.log('zoomlvl', this.state.zoomLevel)
 
-                    this.setState({"list": Immutable.List(items), zoomStack: zstack, start: start, end: end,
-                    zoomamount: 0, zoomLevel: this.state.zoomLevel + 1, data:[], lastFactor: factor}, function () {
-                        this.fetchData(start,end,zoomFactor)
+                    this.setState({
+                        "list": Immutable.List(items), 
+                        zoomStack: this.state.zoomStack.concat([{"start": start, "end": end}]), 
+                        start: start, 
+                        end: end,
+                        zoomamount: 0, 
+                        zoomLevel: this.state.zoomLevel + 1, 
+                        data:[], 
+                        lastFactor: factor
+                    }, function () {
 
+                        console.log(this.state.zoomStack)
+                        console.log(this.state.zoomLevel)
+                       this.fetchData(start,end,zoomFactor)
                         this._onColumnCountChange(items.length)
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 0})
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 1})
-                        
+                    }.bind(this))   
 
-                    }.bind(this))
-                    
+                    console.log('this.state.zoomLevel', this.state.zoomLevel)
+                    console.log('this.state.zoomStack', this.state.zoomStack)
                 }
                 
             } else if (zoomamt < -100){
@@ -279,7 +294,7 @@ export default class Application extends PureComponent {
                 //     zstack.splice(this.state.zoomStack.length - 1,1)
 
                 let zstack = this.state.zoomStack
-                console.log('zstack length', zstack.length)
+                console.log('zstack length out', zstack.length)
                 if (zstack.length > 1){
                     console.log('poppin')
                     zstack.pop()
@@ -295,8 +310,16 @@ export default class Application extends PureComponent {
                         items.push(Math.floor(i));
                     }
 
-                    this.setState({"list": Immutable.List(items), zoomStack: zstack, 
-                    zoomamount: 0, zoomLevel: this.state.zoomLevel - 1, start: start, end: end, data:[], lastFactor: factor}, function () {
+                    this.setState({
+                        "list": Immutable.List(items),
+                        zoomStack: this.state.zoomStack.concat([{"start": start, "end": end}]),
+                        // zoomStack: zstack, 
+                        zoomamount: 0, 
+                        zoomLevel: this.state.zoomLevel - 1, 
+                        start: start, 
+                        end: end, data:[], 
+                        lastFactor: factor}, 
+                        function () {
                         this.fetchData(start,end,zoomFactor)
                         this._computeMajorAxisLabels(start,end,items.length)
 
