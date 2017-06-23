@@ -50,13 +50,15 @@ export default class Application extends PureComponent {
     constructor(props, context) {
         super(props, context)
 
-        const zoominfo = {"start":1,"end":3088286401}
+        const zoominfo = [{"start": 1,"end": 3088286401}]
         let items = [];
         //Aggregating labels
-        let factor = ((zoominfo.end - zoominfo.start) / zoomFactor);
-        for (let i = zoominfo.start; i < (zoominfo.end); i = i + factor) {
+        let factor = ((zoominfo[0].end - zoominfo[0].start) / zoomFactor);
+        for (let i = zoominfo[0].start; i < (zoominfo[0].end); i = i + factor) {
+
             items.push(Math.floor(i));
         }
+        
         this.state = {
             columnCount: zoomFactor,
             //height: 60,
@@ -65,26 +67,23 @@ export default class Application extends PureComponent {
             rowHeight: 20,
             rowCount: 30,
             useDynamicRowHeight: false,
-            list:Immutable.List(items),
+            list: Immutable.List(items),
             zoomindex:100,
             zoomamount: 0,
             zoomLevel: 0,
-            zoomStack: [zoominfo],
+            zoomStack: Immutable.List(zoominfo),
+            // zoomStack: [zoominfo],
             data:[],
             dataIndex: 0,
             lastFactor: factor,
             start: 1,
             end: 3088286401
         }
-
+        
         this._cellRenderer = this._cellRenderer.bind(this)
         this._getColumnWidth = this._getColumnWidth.bind(this)
-        // this._getRowClassName = this._getRowClassName.bind(this)
-        // this._getRowHeight = this._getRowHeight.bind(this)
         this._onColumnCountChange = this._onColumnCountChange.bind(this)
         this._onRowCountChange = this._onRowCountChange.bind(this)
-        this._onScrollToColumnChange = this._onScrollToColumnChange.bind(this)
-        this._onScrollToRowChange = this._onScrollToRowChange.bind(this)
         this._renderXAxisCell = this._renderXAxisCell.bind(this)
         this._renderYAxisCell = this._renderYAxisCell.bind(this)
         this._renderDataCell = this._renderDataCell.bind(this)
@@ -140,12 +139,14 @@ export default class Application extends PureComponent {
 
         let zstack = this.state.zoomStack
                 if (zstack.length > 1){
-                    zstack.pop() 
-                }
+                    nstack = zstack.pop()
 
-                let start = zstack[zstack.length - 1].start
-                let end = zstack[zstack.length - 1].end
-            
+                    zstack = nstack
+                }
+    
+                let start = zstack.get(zstack.size - 1).start
+                let end = zstack.get(zstack.size - 1).end
+                       
         return (
             <div>
 
@@ -195,6 +196,8 @@ export default class Application extends PureComponent {
                                         onKeyDown={this._onKeyDown}
                                       
                                     />
+
+                                    
                                 )}
                             </AutoSizer>
                         )}
@@ -218,9 +221,6 @@ export default class Application extends PureComponent {
     }
 
     _updateZoom({event}) {
-        //console.log(event)
-        //if (isScrolling == false) this.setState({'zoomamount': 0})
-        //else {
         let zoomamt = this.state.zoomamount
     
         switch (event.key){
@@ -242,7 +242,6 @@ export default class Application extends PureComponent {
             else if (zoomLevel == maxZoom && zoomamt > 0) return;
             
             if (zoomamt > 100) {
-                //console.log(zoomamt)
                 dataIndex = 0; // reset data index for next redraw
                 let start = this.state.list.get(Math.max(0, Math.floor(current) - 1))
                 let end = this.state.list.get(Math.min(this.state.list.size-1, Math.floor(current) + 2))
@@ -256,17 +255,16 @@ export default class Application extends PureComponent {
                         items.push(Math.floor(i));
                     }
 
-                    let zstack = this.state.zoomStack
-                    zstack.push({"start": start, "end": end})
+                    let zstack = this.state.zoomStack.concat([{"start":start, "end": end}])
 
-                    
+                    console.log("zoomin start end", start, end)
                     console.log('zstack:', zstack)
                     console.log('zoomlvl', this.state.zoomLevel)
 
                     this.setState({
                         "list": Immutable.List(items), 
-                        zoomStack: this.state.zoomStack.concat([{"start": start, "end": end}]), 
-                        start: start, 
+                        zoomStack: Immutable.List(zstack),
+                        start: start,
                         end: end,
                         zoomamount: 0, 
                         zoomLevel: this.state.zoomLevel + 1, 
@@ -282,8 +280,6 @@ export default class Application extends PureComponent {
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 1})
                     }.bind(this))   
 
-                    console.log('this.state.zoomLevel', this.state.zoomLevel)
-                    console.log('this.state.zoomStack', this.state.zoomStack)
                 }
                 
             } else if (zoomamt < -100){
@@ -294,14 +290,19 @@ export default class Application extends PureComponent {
                 //     zstack.splice(this.state.zoomStack.length - 1,1)
 
                 let zstack = this.state.zoomStack
-                console.log('zstack length out', zstack.length)
-                if (zstack.length > 1){
+                console.log('zstack', zstack)
+                if (zstack.size> 1){
                     console.log('poppin')
-                    zstack.pop()
-                }
-
-                    let start = zstack[zstack.length - 1].start
-                    let end = zstack[zstack.length - 1].end
+                    let nstack = zstack.pop()
+                    zstack = nstack
+              
+                }   
+                    
+                    let start = zstack.get(zstack.size - 1).start
+                    let end = zstack.get(zstack.size -1).end
+           
+                    
+                    console.log(start,end)
 
                     let factor = Math.max(1, Math.floor((end - start) / zoomFactor));
                     let items = [];
@@ -311,13 +312,14 @@ export default class Application extends PureComponent {
                     }
 
                     this.setState({
-                        "list": Immutable.List(items),
-                        zoomStack: this.state.zoomStack.concat([{"start": start, "end": end}]),
-                        // zoomStack: zstack, 
+                        list: Immutable.List(items),
+                        // zoomStack: this.state.zoomStack.concat([{"start": start, "end": end}]),
+                        zoomStack: zstack,
                         zoomamount: 0, 
                         zoomLevel: this.state.zoomLevel - 1, 
                         start: start, 
-                        end: end, data:[], 
+                        end: end, 
+                        data:[], 
                         lastFactor: factor}, 
                         function () {
                         this.fetchData(start,end,zoomFactor)
@@ -336,21 +338,6 @@ export default class Application extends PureComponent {
             else {
                 this.setState({zoomamount: zoomamt})
             }
-
-
-            // for (var i = 0; i < Math.floor(Math.random() * (10000 - 1000 + 1)) ; i++) {
-            //     list.push(Math.floor(Math.random() * (10000 - 1 + 1)))
-            // }
-            //
-            // console.log(list.length)
-            // this.setState({"list":Immutable.List(list)},function(){
-            //     this._onColumnCountChange({"target":{"value":(list.length)}});
-            // }.bind(this))
-            //We want to update data
-            //this.axis.forceUpdate()
-        
-        
-        
         
     }
 
@@ -375,6 +362,7 @@ export default class Application extends PureComponent {
     }
 
     _getDatum(index) {
+       
         return this.state.list.get(index % this.state.list.size)
     }
 
@@ -382,11 +370,6 @@ export default class Application extends PureComponent {
     _getRowClassName(row) {
         return row % 2 === 0 ? styles.evenRow : styles.oddRow
     }
-    //
-    // _getRowHeight({index}) {
-    //     return this._getDatum(index).bind(this).size
-    // }
-
 
 
     _dataInRange(dataStart, dataEnd, axisIndex) {
@@ -476,16 +459,6 @@ export default class Application extends PureComponent {
             style: style
         })
 
-
-        // {label} to add number
-        // return (
-        //     <div
-        //         className={classNames}
-        //         key={key}
-        //         style={style}
-        //     >
-        //     </div>
-        // )
     }
 
     _renderXAxisCell({columnIndex, key, rowIndex, style}) {
@@ -493,6 +466,7 @@ export default class Application extends PureComponent {
         
         const rowClass = this._getRowClassName(rowIndex)
         const datum = this._getDatum(columnIndex)
+        
 
 
         const classNames = cn(rowClass, styles.cell, {
@@ -512,7 +486,9 @@ export default class Application extends PureComponent {
 
 
         //Compute the resolution for the scale
-        let zstate = this.state.zoomStack[this.state.zoomStack.length - 1]
+        let zstate = this.state.zoomStack.get(this.state.zoomStack.size- 1)
+        
+        
 
 
         let label = "" //billions + "." + hundredMillions + tensMillions + millions
@@ -532,6 +508,7 @@ export default class Application extends PureComponent {
         //Major Axis : Markers in Billions
         if ((columnIndex % 5) == 0 && (rowIndex == 0)) {
             label = billions + "." +  hundredMillions + "" + tensMillions  + "B"
+            
         }
 
         
@@ -621,27 +598,6 @@ export default class Application extends PureComponent {
         this.setState({rowCount})
     }
 
-    _onScrollToColumnChange(event) {
-        const {columnCount} = this.state
-        let scrollToColumn = Math.min(columnCount - 1, parseInt(event.target.value, 10))
-
-        if (isNaN(scrollToColumn)) {
-            scrollToColumn = undefined
-        }
-
-        this.setState({scrollToColumn})
-    }
-
-    _onScrollToRowChange(event) {
-        const {rowCount} = this.state
-        let scrollToRow = Math.min(rowCount - 1, parseInt(event.target.value, 10))
-
-        if (isNaN(scrollToRow)) {
-            scrollToRow = undefined
-        }
-
-        this.setState({scrollToRow})
-    }
 
     _computeMajorAxisLabels(start,end,numberitems){
         //If next one is changing keep gap of 4//
@@ -656,55 +612,7 @@ export default class Application extends PureComponent {
 
 
     _onKeyDown (event) {
-
-    //const { columnCount, disabled, mode, rowCount } = this.props
-
-    // if (disabled) {
-    //   return
-    // }
-
-    // const {
-    //   scrollToColumn: scrollToColumnPrevious,
-    //   scrollToRow: scrollToRowPrevious
-    // } = this.state
-
-    // let { scrollToColumn, scrollToRow } = this.state
-
-    // The above cases all prevent default event event behavior.
-    // This is to keep the grid from scrolling after the snap-to update.
-    return this._updateZoom({event})
-    // switch (event.key) {
-    //   case 'ArrowDown':
-    //     return this._updateZoom({event})
-    //     //scrollToRow = mode === 'cells'
-    //     //  ? Math.min(scrollToRow + 1, rowCount - 1)
-    //     //  : Math.min(this._rowStopIndex + 1, rowCount - 1)
-    
-    //   case 'ArrowLeft':
-    //     scrollToColumn = mode === 'cells'
-    //       ? Math.max(scrollToColumn - 1, 0)
-    //       : Math.max(this._columnStartIndex - 1, 0)
-    //     break
-    //   case 'ArrowRight':
-    //     scrollToColumn = mode === 'cells'
-    //       ? Math.min(scrollToColumn + 1, columnCount - 1)
-    //       : Math.min(this._columnStopIndex + 1, columnCount - 1)
-    //     break
-    //   case 'ArrowUp':
-    //     scrollToRow = mode === 'cells'
-    //       ? Math.max(scrollToRow - 1, 0)
-    //       : Math.max(this._rowStartIndex - 1, 0)
-    //     break
-    // }
-
-    // if (
-    //   scrollToColumn !== scrollToColumnPrevious ||
-    //   scrollToRow !== scrollToRowPrevious
-    // ) {
-    //   event.preventDefault()
-
-    //   this.setState({ scrollToColumn, scrollToRow })
-    // }
-  }
+        return this._updateZoom({event})
+    }
 
 }
