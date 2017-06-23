@@ -1,7 +1,6 @@
 
 import Immutable from 'immutable'
 import React from 'react'
-import CustomWindowScroller from '../CustomWindowScroller'
 import cn from 'classnames'
 import styles from './genamap.css'
 import axios from 'axios'
@@ -65,7 +64,6 @@ export default class TopAxis extends React.PureComponent {
         return (
             <AutoSizer disableHeight>
                 {({width}) => (
-
                 <Grid
                 ref={this._setGridRef}
                 cellRenderer = {this._cellRenderer}
@@ -75,7 +73,6 @@ export default class TopAxis extends React.PureComponent {
                 rowCount={rowCount}
                 rowHeight={30}
                 width={width}
-              
                 />
                 )}
             </AutoSizer>
@@ -108,8 +105,6 @@ export default class TopAxis extends React.PureComponent {
                style = {
                 ...style,
                 backgroundColor: "#0000FF",
-          
-
             }
         }
         else{         
@@ -153,7 +148,6 @@ export default class TopAxis extends React.PureComponent {
         this.axis = grid
     }
 
- 
      _getRowClassName(row) {
         return row % 2 === 0 ? styles.evenRow : styles.oddRow
     }

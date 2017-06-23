@@ -1,7 +1,6 @@
 
 import Immutable from 'immutable'
 import React, { PropTypes, PureComponent } from 'react'
-import CustomWindowScroller from '../CustomWindowScroller'
 import cn from 'classnames'
 import styles from './genamap.css'
 import axios from 'axios'
@@ -18,14 +17,10 @@ TODO LIST
 - Auto resize width
 - Make it look prettier
 
-
  */
 const colorRange = ["#990000", "#eeeeee", "#ffffff", "#eeeeee", "#000099"];
 
-// zoomFactor: defines the aggregate factor for the cells
 const zoomFactor = 100;
-// maxZoom = (3088286401-1 / largestIndex^zoomFactor) > 0
-// maxZoom: defines the total number of zoom levels
 const maxZoom = 4;
 const yAxisCellSize = 1;
 let dataIndex = 0;
@@ -43,9 +38,6 @@ const calculateColorScale = (min, max, threshold) => {
 
 
 export default class Application extends PureComponent {
-    //  static contextTypes = {
-    //     list: PropTypes.instanceOf(Immutable.List).isRequired
-    //  };
 
     constructor(props, context) {
         super(props, context)
@@ -61,7 +53,7 @@ export default class Application extends PureComponent {
         
         this.state = {
             columnCount: zoomFactor,
-            //height: 60,
+            height: 600,
             overscanColumnCount: 0,
             overscanRowCount: 0,
             rowHeight: 20,
@@ -72,7 +64,6 @@ export default class Application extends PureComponent {
             zoomamount: 0,
             zoomLevel: 0,
             zoomStack: Immutable.List(zoominfo),
-            // zoomStack: [zoominfo],
             data:[],
             dataIndex: 0,
             lastFactor: factor,
@@ -163,7 +154,6 @@ export default class Application extends PureComponent {
                     <TopAxis selected_min={this.state.start}
                              selected_max={this.state.end}
                     />
-                  
                 </div>
 
                 <div 
@@ -171,12 +161,7 @@ export default class Application extends PureComponent {
                     onKeyDown={this._onKeyDown}
                     >
 
-
                 <div className={styles.CustomWindowScrollerWrapper}>
-                    <CustomWindowScroller>
-                        {({ height, isScrolling, scrollTop }) => (
-
-
                             <AutoSizer disableHeight>
                                 {({width}) => (
                                     <Grid
@@ -200,8 +185,7 @@ export default class Application extends PureComponent {
                                     
                                 )}
                             </AutoSizer>
-                        )}
-                    </CustomWindowScroller>
+
                 </div>
             </div>
             </div>
@@ -222,7 +206,6 @@ export default class Application extends PureComponent {
 
     _updateZoom({event}) {
         let zoomamt = this.state.zoomamount
-    
         switch (event.key){
 
             case('ArrowUp'):
@@ -231,10 +214,8 @@ export default class Application extends PureComponent {
                 
             case('ArrowDown'):
                 zoomamt = this.state.zoomamount - 150
-                break
-     
-        }
-            
+                break    
+        }         
             var current = this.state.hoveredColumnIndex //event.clientX / this._getColumnWidth()
             let zoomLevel = this.state.zoomLevel
             
@@ -257,10 +238,6 @@ export default class Application extends PureComponent {
 
                     let zstack = this.state.zoomStack.concat([{"start":start, "end": end}])
 
-                    console.log("zoomin start end", start, end)
-                    console.log('zstack:', zstack)
-                    console.log('zoomlvl', this.state.zoomLevel)
-
                     this.setState({
                         "list": Immutable.List(items), 
                         zoomStack: Immutable.List(zstack),
@@ -272,8 +249,6 @@ export default class Application extends PureComponent {
                         lastFactor: factor
                     }, function () {
 
-                        console.log(this.state.zoomStack)
-                        console.log(this.state.zoomLevel)
                        this.fetchData(start,end,zoomFactor)
                         this._onColumnCountChange(items.length)
                         this.axis.recomputeGridSize({columnIndex: 0, rowIndex: 0})
@@ -286,23 +261,15 @@ export default class Application extends PureComponent {
                 
                 dataIndex = 0; // reset data index for next redraw
 
-                // let c = this.state.zoomStack[this.state.zoomStack.length - 1]
-                //     zstack.splice(this.state.zoomStack.length - 1,1)
-
                 let zstack = this.state.zoomStack
-                console.log('zstack', zstack)
+
                 if (zstack.size> 1){
-                    console.log('poppin')
                     let nstack = zstack.pop()
                     zstack = nstack
-              
                 }   
-                    
+    
                     let start = zstack.get(zstack.size - 1).start
                     let end = zstack.get(zstack.size -1).end
-           
-                    
-                    console.log(start,end)
 
                     let factor = Math.max(1, Math.floor((end - start) / zoomFactor));
                     let items = [];
@@ -313,7 +280,6 @@ export default class Application extends PureComponent {
 
                     this.setState({
                         list: Immutable.List(items),
-                        // zoomStack: this.state.zoomStack.concat([{"start": start, "end": end}]),
                         zoomStack: zstack,
                         zoomamount: 0, 
                         zoomLevel: this.state.zoomLevel - 1, 
@@ -389,7 +355,6 @@ export default class Application extends PureComponent {
 
     _updateDataIndex() { // async issues
         this.setState({dataIndex: this.state.dataIndex + 1}, function() {
-            console.log(this.state.dataIndex)
         }.bind(this));
     }
 
@@ -402,32 +367,19 @@ export default class Application extends PureComponent {
         let label = ""
         let color = ""
         if (this.state.data.length > 0){
-        //     if (this.state.data[columnIndex]){
-        //         label = this.state.data[columnIndex]["data"][rowIndex - 2]
-        //     }
-        //     if (this.state.data[columnIndex]) {
-                
-                let dataInRange = this._dataInRange(this.state.data[dataIndex]["start"], 
+            let dataInRange = this._dataInRange(this.state.data[dataIndex]["start"], 
                                     this.state.data[dataIndex]["end"], columnIndex);
-                if (dataInRange) {
-                    label = this.state.data[dataIndex]["data"][rowIndex - 2];
-                    dataIndex = (dataIndex + 1) % (this.state.data.length-yAxisCellSize);
-                    let cellColorScale = calculateColorScale(0, 1, parseInt(label))
-                    color = cellColorScale(label)
-                } else {
-                    label = 0;
-                    //color = "#e0e0e0"
-                }
+            if (dataInRange) {
+                label = this.state.data[dataIndex]["data"][rowIndex - 2];
+                 dataIndex = (dataIndex + 1) % (this.state.data.length-yAxisCellSize);
+                let cellColorScale = calculateColorScale(0, 1, parseInt(label))
+                color = cellColorScale(label)
+            }
+            else {
+                label = 0;
+            }
         }
             
-
-        // const rowClass = this._getRowClassName(rowIndex)
-        // const classNames = cn(rowClass, styles.cell, {
-        //     [styles.centeredCell]: columnIndex > 1
-        // })
-
-
-
         var grid = this.axis
 
 
@@ -436,7 +388,7 @@ export default class Application extends PureComponent {
         if (columnIndex == this.state.hoveredColumnIndex){
             color = "rgba(100, 0, 0, 0.25)"
             cname = styles.hoveredItem
-        }
+        }  
 
         style = {
             ...style,
@@ -467,15 +419,12 @@ export default class Application extends PureComponent {
         const rowClass = this._getRowClassName(rowIndex)
         const datum = this._getDatum(columnIndex)
         
-
-
         const classNames = cn(rowClass, styles.cell, {
             [styles.centeredCell]: columnIndex > 0
         })
 
         style = {
             ...style,
-             //fontSize: "x-small",
         }
 
         //Format based on length of number
@@ -484,12 +433,9 @@ export default class Application extends PureComponent {
         const hundredMillions =  Math.floor(datum / 100000000 % 10)
         const billions =  Math.floor(datum / 1000000000 % 10)
 
-
         //Compute the resolution for the scale
         let zstate = this.state.zoomStack.get(this.state.zoomStack.size- 1)
         
-        
-
 
         let label = "" //billions + "." + hundredMillions + tensMillions + millions
 
@@ -504,15 +450,13 @@ export default class Application extends PureComponent {
             end = Math.floor(zstate.end / scale % 10)
         }
 
-
         //Major Axis : Markers in Billions
         if ((columnIndex % 5) == 0 && (rowIndex == 0)) {
             label = billions + "." +  hundredMillions + "" + tensMillions  + "B"
             
         }
-
-        
-            //Minot Axis : Markers in Millions
+  
+        //Minor Axis : Markers in Millions
 
         if (rowIndex == 1){
             label = ""
@@ -589,7 +533,6 @@ export default class Application extends PureComponent {
     }
 
     _onColumnCountChange(columnCount) {
-        //const columnCount = parseInt(event.target.value, 10) || 0
         this.setState({columnCount})
     }
 
